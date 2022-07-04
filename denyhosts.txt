@@ -1,0 +1,5 @@
+# List of denied networks
+# NOTE! Incorrect notation (= a typo) might cause problems. Pay attention to format!
+
+# Localhost
+127.0.0.1/32
