@@ -34,6 +34,10 @@ def main():
         print_page_footer()
         exit()
 
+    # Read tokens from file
+    tokens_file = open(tokens_filename, mode='r')
+    tokens = csv.DictReader(tokens_file)
+
     try:
         # Check if file exists
         filestat = os.stat(assign_filename)
@@ -47,22 +51,28 @@ def main():
         with open(assign_filename, 'r') as file:
             lines = file.readlines()
             
-            # Look if client has already a code assigned
+            # Look if client has already a token assigned
             for line in lines:
                 if line.find(clientip+":") != -1:
                     client_found = 1 
                     break
             
             # Look for next unused code
-            for next_token in tokens:
+            for token_row in tokens:
                 for line in lines:
-                    if line.find(":"+next_token) == -1:
-                        new_token = next_token
+                    # Check if token is assigned already
+                    if line.find(":"+token_row['token']) == -1:
+                        # token unused
+                        new_token = token_row
                         break
             
             file.close()
     else:
-        new_token =''
+        # Assigned filesize is zero. Use first token
+        for token_row in tokens:
+            new_token = token_row
+            break
+
 
     print_page_header()
     print('<h2>Hello Fellow from ' + clientip + '</h2>')
@@ -76,16 +86,20 @@ def main():
         if new_token == '':
             print('Sorry! Out of tokens. Please come back again later.')
         else:
-            print('You would need a new toke<br>\n')
-            print('Your token is: ' +new_token + '\n')
+            print('You would need a new token<br>\n')
+            print('Your token is: ' +new_token['formatted token'] + '<br>\n')
+            print('Expiration date: ' + new_token['expiry date'] + '<br>\n')
             f = open(assign_filename,'a')
-            f.write(clientip+":"+new_token+"\n")
+            f.write(clientip + ':' + new_token['token']+'<br>\n')
             f.close()
             print('NOTE! Keep your token safe, you are not able to retrieve it again from this service!')
 
 
     print('</h2>')
     print_page_footer()
+
+    # Close files
+    tokens_file.close()
 
 def check_if_allowed(ip):
     allowed = True
@@ -102,7 +116,6 @@ def check_if_allowed(ip):
                     network = line.strip().replace('\n', '').replace('\r', '')
                     if not network.startswith('#') and len(network) > 0:
                         if ipaddress.ip_address(ip) in ipaddress.ip_network(network):
-                            sys.stderr.write('\"' + network + '\"\n')
                             allowed = False
                             file.close()
                             break
@@ -112,14 +125,6 @@ def check_if_allowed(ip):
         sys.stderr.write('Unable to open file ' + deny_filename)
         allowed = False
     return allowed
-
-def read_tokens():
-    # Open codes file and read all tokens
-    with open(tokens_filename, mode='r') as file:
-        tokensFile = csv.reader(file)
-        for tokens_in_a_line in tokensFile:
-            tokens = tokens + tokens_in_a_line
-
 
 def print_page_header():
     print('<html>')
