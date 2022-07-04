@@ -90,7 +90,7 @@ def main():
             print('Your token is: ' +new_token['formatted token'] + '<br>\n')
             print('Expiration date: ' + new_token['expiry date'] + '<br>\n')
             f = open(assign_filename,'a')
-            f.write(clientip + ':' + new_token['token']+'<br>\n')
+            f.write(clientip + ':' + new_token['token']+'\n')
             f.close()
             print('NOTE! Keep your token safe, you are not able to retrieve it again from this service!')
 
