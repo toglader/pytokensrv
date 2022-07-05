@@ -12,9 +12,7 @@ import cgitb
 tokens_filename = 'tokens.csv'
 assign_filename = 'assigned.txt'
 deny_filename = 'denyhosts.txt'
-
-
-
+allow_filename = 'allowhosts.txt'
     
 
 def main():
@@ -28,7 +26,7 @@ def main():
     print('')
 
     # Check if user is allowed to user service
-    if not check_if_allowed(clientip):
+    if not check_if_allowed(clientip) or check_if_denied(clientip):
         print_page_header()
         print('Go away!')
         print_page_footer()
@@ -101,8 +99,8 @@ def main():
     # Close files
     tokens_file.close()
 
-def check_if_allowed(ip):
-    allowed = True
+def check_if_denied(ip):
+    denied = False
 
     try:
         # Check if file exists
@@ -116,15 +114,43 @@ def check_if_allowed(ip):
                     network = line.strip().replace('\n', '').replace('\r', '')
                     if not network.startswith('#') and len(network) > 0:
                         if ipaddress.ip_address(ip) in ipaddress.ip_network(network):
-                            allowed = False
+                            denied = True
                             file.close()
                             break
     
-    except:
+    except Exception as e:
         # File does not exist, or read failed
-        sys.stderr.write('Unable to open file ' + deny_filename)
+        sys.stderr.write('Unable to open file ' + deny_filename + ' or file format error\n')
+        sys.stderr.write('Reason: '+ e + '\n')
+        denied = True
+    return denied
+
+def check_if_allowed(ip):
+    allowed = False
+
+    try:
+        # Check if file exists
+        filestat = os.stat(allow_filename)
+
+        if filestat.st_size > 0:
+            with open(allow_filename, 'r') as file:
+                lines = file.readlines()
+                # Loop trhough lines and skip comments and empty lines
+                for line in lines:
+                    network = line.strip().replace('\n', '').replace('\r', '')
+                    if not network.startswith('#') and len(network) > 0:
+                        if ipaddress.ip_address(ip) in ipaddress.ip_network(network):
+                            allowed = True
+                            file.close()
+                            break
+    
+    except Exception as e:
+        # File does not exist, or read failed
+        sys.stderr.write('Unable to open file ' + allow_filename + ' or file format error\n')
+        sys.stderr.write('Reason: '+ e + '\n')
         allowed = False
     return allowed
+
 
 def print_page_header():
     print('<html>')
